@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#5578ec">
+  <title>新概念英语 1 · 听力练习</title>
+  <link rel="stylesheet" href="NCE1_听力练习.css?v=20260801-11">
+</head>
+<body>
+  <header class="hero">
+    <div class="shell hero-inner">
+      <div>
+        <p class="eyebrow">NEW CONCEPT ENGLISH 1</p>
+        <h1>新概念英语 1 · 听力练习</h1>
+        <p class="subtitle">Lessons 1–144 · 分题音频 · 即时核对 · 学习进度自动保存</p>
+      </div>
+      <div class="progress-card" aria-live="polite">
+        <div><span>已完成</span><strong id="progressText">0 / 1480</strong></div>
+        <div class="progress-track"><i id="progressBar"></i></div>
+      </div>
+    </div>
+  </header>
+
+  <nav class="toolbar" aria-label="练习导航">
+    <div class="shell toolbar-inner">
+      <label class="lesson-picker">选择课次
+        <select id="lessonSelect" aria-label="选择课次"></select>
+      </label>
+      <div class="view-tabs" role="tablist">
+        <button class="tab active" data-view="practice" role="tab" aria-selected="true">听力练习</button>
+        <button class="tab" data-view="mistakes" role="tab" aria-selected="false">错题本 <span id="mistakeCount">0</span></button>
+      </div>
+      <label class="rate-picker">语速
+        <select id="rateSelect" aria-label="播放速度">
+          <option value="0.75">0.75×</option><option value="1" selected>1×</option>
+          <option value="1.25">1.25×</option><option value="1.5">1.5×</option>
+        </select>
+      </label>
+    </div>
+  </nav>
+
+  <main class="shell main" id="app"></main>
+
+  <footer>
+    <p>音频按小题或题组切分，每次播放一遍英语内容；中文读题已移除。</p>
+  </footer>
+
+  <script src="NCE1_听力练习.data.js?v=20260801-11"></script>
+  <script src="NCE1_听力练习.js?v=20260801-11"></script>
+</body>
+</html>

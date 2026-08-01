@@ -1,0 +1,17 @@
+.DS_Store
+.claude/
+tmp/
+tools/
+*.md
+**/*.md
+audio/cuts/
+audio/source/
+audio/sources-*.json
+新一同步听力L1-72.pdf-f3ad49af-e5f0-43df-9d55-d92cb0cbbd79/**
+!新一同步听力L1-72.pdf-f3ad49af-e5f0-43df-9d55-d92cb0cbbd79/images/
+!新一同步听力L1-72.pdf-f3ad49af-e5f0-43df-9d55-d92cb0cbbd79/images/**
+新一同步听力L73-144.pdf-3bc844e1-2706-4ada-82b7-fcb0394a36e2/**
+!新一同步听力L73-144.pdf-3bc844e1-2706-4ada-82b7-fcb0394a36e2/images/
+!新一同步听力L73-144.pdf-3bc844e1-2706-4ada-82b7-fcb0394a36e2/images/**
+新一同步听力L1-72答案及原文.pdf-6f9d2ab6-f803-46fd-887d-f3520ba22d63/
+新一同步听力L73-144答案及原文.pdf-8d857b0d-259a-4443-9e96-d65ea6d5fdfd/
