@@ -5,9 +5,9 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="theme-color" content="#5578ec">
   <title>新概念英语 1 · 听力练习</title>
-  <link rel="stylesheet" href="NCE1_听力练习.css?v=20260804-26">
+  <link rel="stylesheet" href="NCE1_听力练习.css?v=20260804-cloudbase-27">
 </head>
-<body>
+<body class="auth-locked">
   <header class="hero">
     <div class="shell hero-inner">
       <div>
@@ -20,7 +20,27 @@
         <div class="progress-track"><i id="progressBar"></i></div>
       </div>
     </div>
+    <div class="shell">
+      <section class="cloud-sync-panel" aria-label="云端学习记录">
+        <p class="auth-gate-copy">请使用专属学生账号登录；每个账号的听力记录会分别保存。</p>
+        <div class="cloud-sync-summary">
+          <span class="cloud-sync-status" role="status" aria-live="polite">
+            <i class="cloud-sync-dot" id="cloudSyncDot"></i>
+            <span id="cloudSyncStatus">本机保存 · 登录后可跨设备同步</span>
+          </span>
+          <button class="cloud-auth-button" id="cloudSyncNow" type="button" hidden>立即同步</button>
+        </div>
+        <form class="cloud-login-form" id="cloudLoginForm">
+          <input id="cloudUsername" name="username" type="text" placeholder="学生账号" autocomplete="username" minlength="5" maxlength="24" required>
+          <input id="cloudPassword" name="password" type="password" placeholder="密码" autocomplete="current-password" minlength="8" maxlength="32" required>
+          <button class="cloud-auth-button primary" type="submit">登录并同步</button>
+          <button class="cloud-auth-button" id="cloudLoginCancel" type="button" hidden>取消</button>
+          <div class="cloud-auth-message" id="cloudAuthMessage" role="status" aria-live="polite"></div>
+        </form>
+      </section>
+    </div>
   </header>
+  <button class="cloud-auth-button" id="cloudLogout" type="button" hidden>退出账号</button>
 
   <nav class="toolbar" aria-label="练习导航">
     <div class="shell toolbar-inner">
@@ -46,7 +66,8 @@
     <p>音频从完整原录音重新切分，保留原有题号、重复次数和停顿；中文读题已移除。</p>
   </footer>
 
+  <script src="https://static.cloudbase.net/cloudbase-js-sdk/3.4.2/cloudbase.full.js"></script>
   <script src="NCE1_听力练习.data.js?v=20260804-26"></script>
-  <script src="NCE1_听力练习.js?v=20260804-26"></script>
+  <script src="NCE1_听力练习.js?v=20260804-cloudbase-27"></script>
 </body>
 </html>

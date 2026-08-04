@@ -47,3 +47,27 @@
 
 @media(max-width:430px){.lesson-head{align-items:flex-start}.lesson-nav{flex-wrap:wrap;justify-content:flex-end}.reset-lesson-btn{flex-basis:100%}}
 @media(max-width:520px){.part-title{flex-wrap:wrap}.reset-part-btn{margin-left:46px}}
+
+/* CloudBase 登录与跨设备学习记录。未登录时先显示登录卡片，避免把不同学生的记录混在一起。 */
+body.auth-locked{min-height:100vh;background:linear-gradient(145deg,#527ff2,#7768ea)}
+body.auth-locked .hero{min-height:100vh;display:flex;flex-direction:column;justify-content:center;padding-block:32px}
+body.auth-locked .toolbar,body.auth-locked .main,body.auth-locked footer{display:none}
+.cloud-sync-panel{margin-top:18px;padding:14px;border:1px solid rgba(255,255,255,.3);border-radius:14px;background:rgba(255,255,255,.12);backdrop-filter:blur(7px)}
+.auth-gate-copy{margin:0 0 12px;color:rgba(255,255,255,.94);font-size:14px;text-align:center}
+body:not(.auth-locked) .auth-gate-copy{display:none}
+.cloud-sync-summary,.cloud-login-form{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.cloud-sync-status{display:inline-flex;align-items:center;gap:7px;margin-right:auto;color:#fff;font-size:13px}
+.cloud-sync-dot{width:8px;height:8px;border-radius:50%;background:#ffd86b;box-shadow:0 0 0 3px rgba(255,216,107,.18)}
+.cloud-sync-dot.online{background:#77e39d;box-shadow:0 0 0 3px rgba(119,227,157,.2)}
+.cloud-sync-dot.error{background:#ff9a97;box-shadow:0 0 0 3px rgba(255,154,151,.2)}
+.cloud-auth-button{border:1px solid rgba(255,255,255,.55);border-radius:9px;padding:7px 12px;background:rgba(255,255,255,.16);color:#fff;cursor:pointer;font:inherit;font-size:13px;font-weight:700}
+.cloud-auth-button.primary{border-color:#fff;background:#fff;color:#3a63d0}
+.cloud-auth-button:hover,.cloud-auth-button:focus-visible{background:rgba(255,255,255,.28)}
+.cloud-auth-button.primary:hover,.cloud-auth-button.primary:focus-visible{background:#f5f7ff}
+#cloudLogout{position:fixed;right:16px;bottom:max(16px,env(safe-area-inset-bottom));z-index:100;background:rgba(42,51,72,.92);box-shadow:0 6px 20px rgba(42,51,72,.28);backdrop-filter:blur(8px)}
+.cloud-login-form{margin-top:10px;padding-top:10px;border-top:1px solid rgba(255,255,255,.22)}
+.cloud-login-form[hidden],.cloud-auth-button[hidden]{display:none}
+.cloud-login-form input{min-width:150px;flex:1;border:1px solid rgba(255,255,255,.5);border-radius:9px;padding:8px 10px;background:rgba(255,255,255,.96);color:var(--ink);font:inherit;font-size:13px;outline:none}
+.cloud-login-form input:focus{border-color:#ffd86b;box-shadow:0 0 0 2px rgba(255,216,107,.2)}
+.cloud-auth-message{width:100%;min-height:19px;color:rgba(255,255,255,.92);font-size:12px}
+@media(max-width:700px){body.auth-locked .hero{padding-inline:16px}.cloud-sync-panel{margin-top:20px}.cloud-login-form input{min-width:0;width:100%;flex-basis:100%}.cloud-login-form .cloud-auth-button{flex:1}}
