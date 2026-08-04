@@ -24,6 +24,16 @@
 .shared-audio-head .audio-status{color:#435270;font-weight:700}
 .shared-questions{display:grid;gap:12px;padding:12px}
 .shared-questions .question{background:#fff}
+.cloze-dialogue{padding:20px;line-height:2.8;white-space:pre-line;font-size:1rem}
+.cloze-blank{display:inline-flex;align-items:center;gap:5px;margin:0 4px;white-space:normal;vertical-align:middle;padding:3px 6px;border-radius:10px;background:#f4f7fb}
+.cloze-blank label{display:inline-flex;align-items:center;gap:5px}
+.cloze-number{display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;background:#52657d;color:#fff;font-size:.72rem;font-weight:800}
+.cloze-input{width:150px;min-width:110px;margin:0}
+.cloze-actions{display:inline-flex;align-items:center;gap:4px;margin:0}
+.cloze-actions button{padding:5px 7px;font-size:.74rem}
+.cloze-blank .answer-box{display:inline-block;margin:0 0 0 4px;padding:4px 7px}
+.cloze-blank .answer-box[hidden]{display:none}
+@media(max-width:700px){.cloze-dialogue{padding:14px;line-height:2.5}.cloze-input{width:120px}.cloze-actions .soft-btn{padding:5px}}
 .star-btn{margin-left:auto}
 
 @media(max-width:520px){.shared-audio-head{align-items:flex-start;flex-wrap:wrap}.shared-audio-head .audio-wrap{flex-basis:100%}.shared-questions{padding:8px}}

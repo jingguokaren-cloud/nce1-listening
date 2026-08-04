@@ -1,7 +1,7 @@
 (() => {
   "use strict";
   const KEY = "nce1-listening-v1";
-  const AUDIO_REVISION = "20260801-3";
+  const AUDIO_REVISION = "20260804-manual-audit-26";
   const TOTAL = LISTENING_DATA.reduce((n,l)=>n+l.parts.reduce((m,p)=>m+p.questions.length,0),0);
   const byId = new Map();
   LISTENING_DATA.forEach(l=>l.parts.forEach(p=>p.questions.forEach(q=>byId.set(q.id,{lesson:l,part:p,q}))));
@@ -11,10 +11,6 @@
   const persistentAudio = new Audio();
   let activeAudioSrc = "";
   let activePlayButton = null;
-  let playbackPhase = "idle";
-  let playbackPass = 0;
-  let playbackTargetPasses = 1;
-  let playbackToken = 0;
   const app = document.querySelector("#app");
   const lessonSelect = document.querySelector("#lessonSelect");
   const rateSelect = document.querySelector("#rateSelect");
@@ -28,9 +24,9 @@
     safe=safe.replace(/\*\*([^*]+)\*\*/g,"<strong>$1</strong>");
     return safe.replace(/\n/g,"<br>");
   }
-  function answerLetter(answer){const m=answer.match(/^([A-F])(?:（|\s|$)/);return m?m[1]:null}
+  function answerLetter(answer){const m=answer.match(/^([A-G])(?:（|\s|$)/);return m?m[1]:null}
   function isTF(answer){const m=answer.match(/^([TF])(?:（(?:正确|错误)）|\s+(?:true|false)|$)/i);return m?m[1].toUpperCase():null}
-  function inferredLetters(context){const found=[...context.matchAll(/(?:^|\n)\s*([A-F])\.\s*/g)].map(m=>m[1]);return [...new Set(found)]}
+  function inferredLetters(context){const found=[...context.matchAll(/(?:^|\n)\s*([A-G])\.\s*/g)].map(m=>m[1]);return [...new Set(found)]}
   function normalized(s){return String(s||"").trim().toLowerCase().replace(/[\s.,!?;:'"“”‘’()（）-]+/g,"")}
   function correctValue(q){return answerLetter(q.answer)||isTF(q.answer)||q.answer}
   function selectedValue(q){return state.answers[q.id]??""}
@@ -50,8 +46,8 @@
     }
     return [];
   }
-  function audioPlayerHTML(src,label,ariaLabel,sequence,playCount){
-    return `<div class="audio-wrap"><button class="play-btn" data-play data-audio-src="${esc(`${src}?v=${AUDIO_REVISION}`)}" data-audio-sequence="${esc(sequence)}" data-play-count="${playCount}" aria-label="${ariaLabel}" tabindex="0">▶</button><span class="audio-status">${label}</span></div>`;
+  function audioPlayerHTML(src,label,ariaLabel){
+    return `<div class="audio-wrap"><button class="play-btn" data-play data-audio-src="${esc(`${src}?v=${AUDIO_REVISION}`)}" aria-label="${ariaLabel}" tabindex="0">▶</button><span class="audio-status">${label}</span></div>`;
   }
   function questionHTML(q,part,showAudio=true){
     const list=choices(q,part),selected=selectedValue(q),checked=!!state.checked[q.id],correct=isCorrect(q);
@@ -61,13 +57,27 @@
     }).join("")}</div>`:`<input class="text-answer" data-input value="${esc(selected)}" placeholder="请输入答案" ${checked?"readonly":""}>`;
     const checkAction=list.length||checked?"":'<button class="check-btn" data-check tabindex="-1">核对答案</button>';
     return `<article class="question${checked?` checked ${correct?"correct":"wrong"}`:""}" data-id="${q.id}">
-      <div class="question-top"><span class="q-number">${q.number}.</span>${showAudio?audioPlayerHTML(q.audio,`点击播放 · 含序号 · 英语${q.playCount===2?"两":"一"}遍`,`播放第 ${q.number} 题，${q.playCount===2?"两":"一"}遍`,String(q.number),q.playCount):""}<button class="star-btn${state.stars[q.id]?" starred":""}" data-star aria-label="收藏此题">★</button></div>
+      <div class="question-top"><span class="q-number">${q.number}.</span>${showAudio?audioPlayerHTML(q.audio,"点击播放 · 原录音（含序号）",`播放第 ${q.number} 题原录音`):""}<button class="star-btn${state.stars[q.id]?" starred":""}" data-star aria-label="收藏此题">★</button></div>
       <div class="prompt">${rich(q.prompt)}</div>${options}
       <div class="actions">${checkAction}<button class="soft-btn" data-reset-question${list.length?"":' tabindex="-1"'}>重置本题</button><button class="soft-btn" data-answer${list.length?"":' tabindex="-1"'}>显示答案</button>${list.length?"":'<span class="shortcut-hint">Enter 核对 · Tab 下一题播放键</span>'}${checked?`<span class="feedback ${correct?"ok":"bad"}">${correct?"回答正确":"再听一次试试"}</span>`:""}</div>
       <div class="answer-box" data-answer-box hidden>答案：${rich(q.answer)}</div>
     </article>`;
   }
+  function clozeBlankHTML(q){
+    const selected=selectedValue(q),checked=!!state.checked[q.id],correct=isCorrect(q);
+    const [before="",after=""] = q.prompt.split("____");
+    return `${rich(before)}<span class="question cloze-blank${checked?` checked ${correct?"correct":"wrong"}`:""}" data-id="${q.id}"><label><span class="cloze-number">${q.number}</span><input class="text-answer cloze-input" data-input value="${esc(selected)}" placeholder="填写第 ${q.number} 空" aria-label="第 ${q.number} 空" ${checked?"readonly":""}></label><span class="actions cloze-actions">${checked?"":'<button class="check-btn" data-check tabindex="-1">核对</button>'}<button class="soft-btn" data-reset-question tabindex="-1">重置</button><button class="soft-btn" data-answer tabindex="-1">答案</button>${checked?`<span class="feedback ${correct?"ok":"bad"}">${correct?"正确":"再听一次"}</span>`:""}</span><span class="answer-box" data-answer-box hidden>答案：${rich(q.answer)}</span></span>${rich(after)}`;
+  }
+  function clozeGroupHTML(part,questions){
+    const first=questions[0];
+    if(!first?.audioGroup||!questions.every(q=>q.audioGroup===first.audioGroup&&!q.options.length&&q.prompt.includes("____")))return "";
+    return `<section class="shared-audio-group cloze-group"><div class="shared-audio-head"><span class="shared-audio-badge">共用录音</span>${audioPlayerHTML(first.groupAudio,`${first.groupLabel} · 原录音`,`播放${first.groupLabel}原录音`)}</div><div class="cloze-dialogue">${questions.map(clozeBlankHTML).join("\n")}</div></section>`;
+  }
   function questionsHTML(part,questions){
+    if(part.cloze&&questions.length>1){
+      const cloze=clozeGroupHTML(part,questions);
+      if(cloze)return cloze;
+    }
     const output=[];
     for(let index=0;index<questions.length;){
       const question=questions[index];
@@ -81,16 +91,13 @@
         grouped.push(questions[index]);
         index+=1;
       }
-      const firstNumber=grouped[0].number,lastNumber=grouped[grouped.length-1].number;
-      const sequence=firstNumber===lastNumber?String(firstNumber):`${firstNumber}-${lastNumber}`;
-      const countLabel=question.playCount===2?"两":"一";
-      output.push(`<section class="shared-audio-group"><div class="shared-audio-head"><span class="shared-audio-badge">共用录音</span>${audioPlayerHTML(question.groupAudio,`${question.groupLabel} · 含序号 · 英语${countLabel}遍`,`播放共用录音，${countLabel}遍`,sequence,question.playCount)}</div><div class="shared-questions">${grouped.map(item=>questionHTML(item,part,false)).join("")}</div></section>`);
+      output.push(`<section class="shared-audio-group"><div class="shared-audio-head"><span class="shared-audio-badge">共用录音</span>${audioPlayerHTML(question.groupAudio,`${question.groupLabel} · 原录音`,`播放${question.groupLabel}原录音`)}</div><div class="shared-questions">${grouped.map(item=>questionHTML(item,part,false)).join("")}</div></section>`);
     }
     return output.join("");
   }
   function hasImageChoices(part){return /!\[[^\]]*\]\([^)]+\)/.test(part.context)}
   function imageChoiceHTML(context){
-    const pattern=/(?:^|\n)\s*([A-F])\.\s*([\s\S]*?)(?=\n\s*[A-F]\.\s*|$)/g;
+    const pattern=/(?:^|\n)\s*([A-G])\.\s*([\s\S]*?)(?=\n\s*[A-G]\.\s*|$)/g;
     const choices=[...context.matchAll(pattern)];
     if(!choices.length)return `<div class="context">${rich(context)}</div>`;
     return `<div class="image-choice-list">${choices.map(match=>`<figure class="image-choice-card"><figcaption>${match[1]}</figcaption><div>${rich(match[2].trim())}</div></figure>`).join("")}</div>`;
@@ -166,89 +173,19 @@
   function resetPlayButtons(){document.querySelectorAll(".play-btn.playing").forEach(button=>{button.classList.remove("playing");button.textContent="▶"})}
   function syncActivePlayButton(){
     resetPlayButtons();
-    if(!activeAudioSrc||playbackPhase==="idle"||playbackPhase==="paused")return;
+    if(!activeAudioSrc||persistentAudio.paused)return;
     activePlayButton=[...document.querySelectorAll("[data-play]")].find(button=>button.dataset.audioSrc===activeAudioSrc)||null;
     if(activePlayButton){activePlayButton.classList.add("playing");activePlayButton.textContent="❚❚"}
   }
-  function stopAudio(){
-    playbackToken+=1;
-    if("speechSynthesis" in window)window.speechSynthesis.cancel();
-    persistentAudio.pause();
-    persistentAudio.currentTime=0;
-    activeAudioSrc="";
-    activePlayButton=null;
-    playbackPhase="idle";
-    playbackPass=0;
-    playbackTargetPasses=1;
-    resetPlayButtons();
-  }
-  function sequenceAnnouncement(sequence){
-    const [first,last]=String(sequence||"").split("-");
-    return last?`Questions ${first} to ${last}`:`Question ${first}`;
-  }
-  function beginAudioPass(token,pass){
-    if(token!==playbackToken||!activeAudioSrc)return;
-    playbackPass=pass;
-    playbackPhase="audio";
-    persistentAudio.currentTime=0;
-    persistentAudio.playbackRate=Number(state.rate)||1;
-    persistentAudio.play().then(syncActivePlayButton).catch(()=>{
-      if(activePlayButton?.nextElementSibling)activePlayButton.nextElementSibling.textContent="音频加载失败";
-      stopAudio();
-    });
-  }
-  function announceSequence(sequence,token){
-    if(!("speechSynthesis" in window)||typeof SpeechSynthesisUtterance==="undefined"){
-      beginAudioPass(token,1);
-      return;
-    }
-    const utterance=new SpeechSynthesisUtterance(sequenceAnnouncement(sequence));
-    utterance.lang="en-US";
-    utterance.rate=0.9;
-    utterance.onend=()=>beginAudioPass(token,1);
-    utterance.onerror=()=>beginAudioPass(token,1);
-    window.speechSynthesis.speak(utterance);
-  }
+  function stopAudio(){persistentAudio.pause();persistentAudio.currentTime=0;activeAudioSrc="";activePlayButton=null;resetPlayButtons()}
   function play(btn){
     const src=btn.dataset.audioSrc;
-    if(activeAudioSrc===src&&playbackPhase==="audio"&&!persistentAudio.paused){
-      persistentAudio.pause();
-      playbackPhase="paused";
-      syncActivePlayButton();
-      return;
-    }
-    if(activeAudioSrc===src&&playbackPhase==="paused"){
-      playbackPhase="audio";
-      persistentAudio.play().then(syncActivePlayButton);
-      return;
-    }
-    stopAudio();
-    const token=playbackToken;
-    activeAudioSrc=src;
-    activePlayButton=btn;
-    playbackTargetPasses=Number(btn.dataset.playCount)||1;
-    playbackPhase="announcement";
-    persistentAudio.src=src;
-    persistentAudio.load();
-    syncActivePlayButton();
-    announceSequence(btn.dataset.audioSequence,token);
+    if(activeAudioSrc===src&&!persistentAudio.paused){persistentAudio.pause();syncActivePlayButton();return}
+    if(activeAudioSrc!==src){persistentAudio.pause();persistentAudio.currentTime=0;persistentAudio.src=src;activeAudioSrc=src}
+    persistentAudio.playbackRate=Number(state.rate)||1;
+    persistentAudio.play().then(()=>{activePlayButton=btn;syncActivePlayButton()}).catch(()=>{btn.nextElementSibling.textContent="音频加载失败"});
   }
-  persistentAudio.addEventListener("ended",()=>{
-    if(playbackPhase!=="audio")return;
-    if(playbackPass<playbackTargetPasses){
-      const token=playbackToken;
-      playbackPhase="gap";
-      syncActivePlayButton();
-      setTimeout(()=>beginAudioPass(token,2),350);
-      return;
-    }
-    activeAudioSrc="";
-    activePlayButton=null;
-    playbackPhase="idle";
-    playbackPass=0;
-    playbackTargetPasses=1;
-    resetPlayButtons();
-  });
+  persistentAudio.addEventListener("ended",()=>{activeAudioSrc="";activePlayButton=null;resetPlayButtons()});
   function gradeTextQuestion(card){
     const id=card.dataset.id,q=byId.get(id).q,input=card.querySelector("[data-input]");
     state.answers[id]=input.value;
