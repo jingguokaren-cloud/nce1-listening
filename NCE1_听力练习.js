@@ -18,8 +18,8 @@
   const lessonSelect = document.querySelector("#lessonSelect");
   const rateSelect = document.querySelector("#rateSelect");
 
-  function emptyState(){return {lesson:"l001-002",answers:{},checked:{},wrong:{},stars:{},rate:1,updatedAt:0}}
-  function normalizeState(next={}){return {lesson:next.lesson||"l001-002",answers:next.answers||{},checked:next.checked||{},wrong:next.wrong||{},stars:next.stars||{},rate:Number(next.rate)||1,updatedAt:Number(next.updatedAt)||Date.now()}}
+  function emptyState(){return {lesson:"l001-002",answers:{},checked:{},wrong:{},stars:{},vocab:{},rate:1,updatedAt:0}}
+  function normalizeState(next={}){return {lesson:next.lesson||"l001-002",answers:next.answers||{},checked:next.checked||{},wrong:next.wrong||{},stars:next.stars||{},vocab:next.vocab||{},rate:Number(next.rate)||1,updatedAt:Number(next.updatedAt)||Date.now()}}
   function loadForKey(key){try{return normalizeState(JSON.parse(localStorage.getItem(key)||"{}"))}catch{return emptyState()}}
   function activateStudentStorage(identity){
     const keyPart=String(identity.userId||identity.username||"").trim().toLowerCase().replace(/[^a-z0-9_.:-]/g,"-");
@@ -40,7 +40,7 @@
   function applyCloudState(next){state=normalizeState(next);lessonIndex=Math.max(0,LISTENING_DATA.findIndex(l=>l.id===state.lesson));lessonSelect.value=LISTENING_DATA[lessonIndex]?.id||"l001-002";save({skipCloud:true,preserveTimestamp:true});render()}
   function progressSummary(){
     const done=Object.keys(state.checked).filter(id=>state.checked[id]).length;
-    return {completedItems:done,totalItems:TOTAL,wrongItems:Object.values(state.wrong).filter(Boolean).length,starredItems:Object.values(state.stars).filter(Boolean).length,lastLesson:state.lesson};
+    return {completedItems:done,totalItems:TOTAL,wrongItems:Object.values(state.wrong).filter(Boolean).length,starredItems:Object.values(state.stars).filter(Boolean).length,vocabItems:Object.keys(state.vocab).length,lastLesson:state.lesson};
   }
   async function initializeCloudSync(){
     try{
@@ -148,7 +148,13 @@
   function partHTML(part){return `<section class="part-card${hasImageChoices(part)?" image-part":""}"><h3 class="part-title"><span class="roman">${part.roman}</span><span class="part-title-text">${rich(part.title)}</span><button class="reset-part-btn" data-reset-part="${part.roman}">重置本大题</button></h3>${partExerciseHTML(part)}${part.transcript?`<details class="transcript"><summary>查看本大题听力原文</summary><div class="transcript-body">${rich(part.transcript)}</div></details>`:""}</section>`}
   function renderPractice(){const l=LISTENING_DATA[lessonIndex];app.innerHTML=`<div class="lesson-head"><h2>${l.label}</h2><div class="lesson-nav"><button class="reset-lesson-btn" data-reset-lesson>重置本课</button><button class="icon-btn" data-prev ${lessonIndex===0?"disabled":""} aria-label="上一课">←</button><button class="icon-btn" data-next ${lessonIndex===LISTENING_DATA.length-1?"disabled":""} aria-label="下一课">→</button></div></div>${l.parts.map(partHTML).join("")}`;bindQuestions()}
   function renderMistakes(){const items=Object.keys(state.wrong).filter(id=>state.wrong[id]&&byId.has(id));app.innerHTML=items.length?`<div class="lesson-head"><h2>错题本</h2><span>${items.length} 题</span></div>${items.map(id=>{const x=byId.get(id);return `<section class="part-card${hasImageChoices(x.part)?" image-part":""}"><h3 class="part-title"><span class="roman">${x.part.roman}</span>${x.lesson.label} · ${rich(x.part.title)}</h3>${partExerciseHTML(x.part,[x.q])}</section>`}).join("")}`:`<div class="empty"><h2>暂时没有错题</h2><p>答错的题目会自动收录到这里。</p></div>`;bindQuestions()}
-  function render(){view==="practice"?renderPractice():renderMistakes();updateProgress()}
+  function renderVocab(){
+    const words=Object.entries(state.vocab).sort((a,b)=>(b[1].ts||0)-(a[1].ts||0));
+    app.innerHTML=`<div class="lesson-head"><h2>我的生词本</h2>${words.length?'<button class="reset-lesson-btn" data-clear-vocab>清空生词本</button>':""}</div>${words.length?`<div class="vocab-list">${words.map(([word,item])=>`<article class="vocab-card"><div><strong>${esc(word)}</strong><p>${esc(item.translation||"")}</p></div><button class="soft-btn" data-remove-vocab="${esc(word)}" type="button">移除</button></article>`).join("")}</div>`:'<div class="empty"><h2>生词本还是空的</h2><p>在练习、选项或听力原文中长按英文单词，查询后即可选择加入。</p></div>'}`;
+    app.querySelectorAll("[data-remove-vocab]").forEach(button=>button.onclick=()=>{delete state.vocab[button.dataset.removeVocab];save();renderVocab()});
+    app.querySelector("[data-clear-vocab]")?.addEventListener("click",()=>{if(confirm("确定清空所有生词吗？")){state.vocab={};save();renderVocab()}});
+  }
+  function render(){if(view==="practice")renderPractice();else if(view==="mistakes")renderMistakes();else renderVocab();updateProgress()}
   function bindQuestions(){
     app.querySelectorAll("[data-play]").forEach(btn=>btn.onclick=()=>{
       play(btn);
@@ -249,12 +255,13 @@
   }
   function check(btn){gradeTextQuestion(btn.closest(".question"))}
   function goLesson(index){stopAudio();lessonIndex=Math.max(0,Math.min(index,LISTENING_DATA.length-1));state.lesson=LISTENING_DATA[lessonIndex].id;lessonSelect.value=state.lesson;save();render();scrollTo({top:document.querySelector(".toolbar").offsetTop,behavior:"smooth"})}
-  function updateProgress(){const done=Object.keys(state.checked).filter(id=>state.checked[id]).length;document.querySelector("#progressText").textContent=`${done} / ${TOTAL}`;document.querySelector("#progressBar").style.width=`${done/TOTAL*100}%`;document.querySelector("#mistakeCount").textContent=Object.values(state.wrong).filter(Boolean).length}
+  function updateProgress(){const done=Object.keys(state.checked).filter(id=>state.checked[id]).length;document.querySelector("#progressText").textContent=`${done} / ${TOTAL}`;document.querySelector("#progressBar").style.width=`${done/TOTAL*100}%`;document.querySelector("#mistakeCount").textContent=Object.values(state.wrong).filter(Boolean).length;document.querySelector("#vocabCount").textContent=Object.keys(state.vocab).length}
 
   LISTENING_DATA.forEach(l=>lessonSelect.add(new Option(l.label,l.id)));
   lessonSelect.value=LISTENING_DATA[lessonIndex].id;lessonSelect.onchange=()=>goLesson(LISTENING_DATA.findIndex(l=>l.id===lessonSelect.value));
   rateSelect.value=String(state.rate);rateSelect.onchange=()=>{state.rate=Number(rateSelect.value);persistentAudio.playbackRate=state.rate;save()};
   document.querySelectorAll(".tab").forEach(tab=>tab.onclick=()=>{stopAudio();view=tab.dataset.view;document.querySelectorAll(".tab").forEach(x=>{x.classList.toggle("active",x===tab);x.setAttribute("aria-selected",String(x===tab))});render()});
+  window.NCEWordLookup?.init({root:"#app",isSaved:word=>Boolean(state.vocab[word]),onSave:(word,translation)=>{state.vocab[word]={translation,ts:Date.now()};save();if(view==="vocab")renderVocab()}});
   render();
   initializeCloudSync();
 })();
