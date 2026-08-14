@@ -71,10 +71,3 @@ body:not(.auth-locked) .auth-gate-copy{display:none}
 .cloud-login-form input:focus{border-color:#ffd86b;box-shadow:0 0 0 2px rgba(255,216,107,.2)}
 .cloud-auth-message{width:100%;min-height:19px;color:rgba(255,255,255,.92);font-size:12px}
 @media(max-width:700px){body.auth-locked .hero{padding-inline:16px}.cloud-sync-panel{margin-top:20px}.cloud-login-form input{min-width:0;width:100%;flex-basis:100%}.cloud-login-form .cloud-auth-button{flex:1}}
-
-/* 长按查词后的生词本；卡片在横屏平板上自动分栏。 */
-.vocab-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px}
-.vocab-card{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;padding:16px;border:1px solid var(--line);border-radius:14px;background:#fff;box-shadow:var(--shadow)}
-.vocab-card strong{color:var(--blue);font-family:Georgia,"Times New Roman",serif;font-size:19px}
-.vocab-card p{margin:5px 0 0;color:var(--muted);font-size:14px}
-.vocab-card .soft-btn{flex:0 0 auto;min-height:40px}
