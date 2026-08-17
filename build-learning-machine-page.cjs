@@ -1,0 +1,66 @@
+const fs = require("fs");
+
+const sourcePath = "NCE1_听力练习.html";
+const outputPath = "learning-machine.html";
+const cssPath = "NCE1_听力练习.css";
+const scriptPaths = [
+  "vendor/cloudbase.core.es5.js",
+  "vendor/cloudbase.auth.es5.js",
+  "vendor/cloudbase.database.es5.js",
+  "cloud-sync.es5.js",
+  "NCE1_听力练习.data.es5.js",
+  "NCE1_听力练习.es5.js",
+];
+
+const source = fs.readFileSync(sourcePath, "utf8");
+const css = fs.readFileSync(cssPath, "utf8").trim();
+const loaderStart = source.lastIndexOf(
+  '  <script src="https://static.cloudbase.net/cloudbase-js-sdk/3.4.2/cloudbase.full.js"></script>'
+);
+const bodyEnd = source.lastIndexOf("</body>");
+
+if (loaderStart < 0 || bodyEnd < loaderStart) throw new Error("Page loader section not found");
+if (css.toLowerCase().includes("</style")) throw new Error("Unsafe style terminator in CSS");
+
+const scripts = scriptPaths.map((path) => {
+  const content = fs.readFileSync(path, "utf8").trim();
+  if (content.toLowerCase().includes("</script")) {
+    throw new Error(`Unsafe script terminator in ${path}`);
+  }
+  return `  <script data-embedded-source="${path}">\n${content}\n  </script>`;
+});
+
+const bootstrap = `  <script>
+    window.globalThis = window.globalThis || window;
+    Object.values = Object.values || function (object) {
+      return Object.keys(object).map(function (key) { return object[key]; });
+    };
+    Object.entries = Object.entries || function (object) {
+      return Object.keys(object).map(function (key) { return [key, object[key]]; });
+    };
+    String.prototype.padStart = String.prototype.padStart || function (length, fill) {
+      var value = String(this);
+      var padding = String(fill || " ");
+      while (value.length < length) value = padding + value;
+      return value.slice(-length);
+    };
+    window.NCE_SINGLE_FILE_SYNC = true;
+    window.NCE_SINGLE_FILE_BUILD = "20260817-listening-1";
+  </script>`;
+
+const embeddedStyle = `<style data-embedded-source="${cssPath}">\n${css}\n</style>`;
+const sourceWithStyle = source.replace(
+  /<link rel="stylesheet" href="NCE1_听力练习\.css\?v=[^"]+">/,
+  embeddedStyle
+);
+const adjustedLoaderStart = sourceWithStyle.lastIndexOf(
+  '  <script src="https://static.cloudbase.net/cloudbase-js-sdk/3.4.2/cloudbase.full.js"></script>'
+);
+const adjustedBodyEnd = sourceWithStyle.lastIndexOf("</body>");
+const output = sourceWithStyle.slice(0, adjustedLoaderStart)
+  + bootstrap + "\n"
+  + scripts.join("\n") + "\n"
+  + sourceWithStyle.slice(adjustedBodyEnd);
+
+fs.writeFileSync(outputPath, output);
+console.log(`${outputPath}: ${Buffer.byteLength(output)} bytes`);

@@ -2,7 +2,6 @@
   "use strict";
   const STORAGE_KEY_PREFIX = "nce1-listening-v1";
   const AUDIO_REVISION = "20260804-manual-audit-26";
-  const CLOUD_SYNC_REVISION = "20260804-cloudbase-27";
   const TOTAL = LISTENING_DATA.reduce((n,l)=>n+l.parts.reduce((m,p)=>m+p.questions.length,0),0);
   const byId = new Map();
   LISTENING_DATA.forEach(l=>l.parts.forEach(p=>p.questions.forEach(q=>byId.set(q.id,{lesson:l,part:p,q}))));
@@ -44,7 +43,8 @@
   }
   async function initializeCloudSync(){
     try{
-      const {createCloudSync}=await import(`./cloud-sync.js?v=${CLOUD_SYNC_REVISION}`);
+      const createCloudSync=window.NCECloudSync&&window.NCECloudSync.createCloudSync;
+      if(typeof createCloudSync!=="function")throw new Error("云同步组件未加载");
       cloudSync=await createCloudSync({getState:()=>normalizeState(state),applyState:applyCloudState,getSummary:progressSummary,onAuthenticated:activateStudentStorage,onSignedOut:deactivateStudentStorage});
     }catch(error){
       const status=document.querySelector("#cloudSyncStatus"),dot=document.querySelector("#cloudSyncDot");
