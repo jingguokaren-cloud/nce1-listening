@@ -45,7 +45,7 @@ const bootstrap = `  <script>
       return value.slice(-length);
     };
     window.NCE_SINGLE_FILE_SYNC = true;
-    window.NCE_SINGLE_FILE_BUILD = "20260817-listening-1";
+    window.NCE_SINGLE_FILE_BUILD = "20260817-listening-2";
   </script>`;
 
 const embeddedStyle = `<style data-embedded-source="${cssPath}">\n${css}\n</style>`;

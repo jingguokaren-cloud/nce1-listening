@@ -242,7 +242,8 @@
   }
   function handleInputKeydown(event){
     const card=event.currentTarget.closest(".question");
-    if(event.key==="Enter"){
+    const keyCode=event.keyCode||event.which;
+    if(event.key==="Enter"||event.code==="Enter"||event.code==="NumpadEnter"||keyCode===13){
       event.preventDefault();
       if(!state.checked[card.dataset.id])gradeTextQuestion(card);
     }
