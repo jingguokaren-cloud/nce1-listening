@@ -9,7 +9,6 @@
   let activeStorageKey = "";
   let lessonIndex = Math.max(0, LISTENING_DATA.findIndex(l=>l.id===state.lesson));
   let view = "practice";
-  let cloudSync = null;
   const persistentAudio = new Audio();
   let activeAudioSrc = "";
   let activePlayButton = null;
@@ -20,38 +19,34 @@
   function emptyState(){return {lesson:"l001-002",answers:{},checked:{},wrong:{},stars:{},rate:1,updatedAt:0}}
   function normalizeState(next={}){return {lesson:next.lesson||"l001-002",answers:next.answers||{},checked:next.checked||{},wrong:next.wrong||{},stars:next.stars||{},rate:Number(next.rate)||1,updatedAt:Number(next.updatedAt)||Date.now()}}
   function loadForKey(key){try{return normalizeState(JSON.parse(localStorage.getItem(key)||"{}"))}catch{return emptyState()}}
-  function activateStudentStorage(identity){
-    const keyPart=String(identity.userId||identity.username||"").trim().toLowerCase().replace(/[^a-z0-9_.:-]/g,"-");
-    activeStorageKey=keyPart?`${STORAGE_KEY_PREFIX}:${keyPart}`:"";
-    state=activeStorageKey?loadForKey(activeStorageKey):emptyState();
+  function migrateLegacyProgress(){
+    try{
+      if(localStorage.getItem(STORAGE_KEY_PREFIX)!==null)return;
+      let bestKey="",bestAt=-1;
+      for(let index=0;index<localStorage.length;index+=1){
+        const key=localStorage.key(index)||"";
+        if(key.indexOf(STORAGE_KEY_PREFIX+":")!==0)continue;
+        let at=0;
+        try{at=Number(JSON.parse(localStorage.getItem(key)||"{}").updatedAt)||0}catch{at=0}
+        if(at>bestAt){bestAt=at;bestKey=key}
+      }
+      if(bestKey)localStorage.setItem(STORAGE_KEY_PREFIX,localStorage.getItem(bestKey)||"{}");
+    }catch{}
+  }
+  function activateLocalStorage() {
+  migrateLegacyProgress();
+    activeStorageKey=STORAGE_KEY_PREFIX;
+    state=loadForKey(activeStorageKey);
     lessonIndex=Math.max(0,LISTENING_DATA.findIndex(l=>l.id===state.lesson));
     lessonSelect.value=LISTENING_DATA[lessonIndex]?.id||"l001-002";
     rateSelect.value=String(state.rate);
     render();
-  }
-  function deactivateStudentStorage(){activeStorageKey="";state=emptyState();lessonIndex=0;render()}
-  function save({skipCloud=false,preserveTimestamp=false}={}){
-    if(!preserveTimestamp)state.updatedAt=Date.now();
-    try{if(activeStorageKey)localStorage.setItem(activeStorageKey,JSON.stringify(state))}catch{}
-    if(!skipCloud&&cloudSync)cloudSync.queueSync();
     updateProgress();
   }
-  function applyCloudState(next){state=normalizeState(next);lessonIndex=Math.max(0,LISTENING_DATA.findIndex(l=>l.id===state.lesson));lessonSelect.value=LISTENING_DATA[lessonIndex]?.id||"l001-002";save({skipCloud:true,preserveTimestamp:true});render()}
-  function progressSummary(){
-    const done=Object.keys(state.checked).filter(id=>state.checked[id]).length;
-    return {completedItems:done,totalItems:TOTAL,wrongItems:Object.values(state.wrong).filter(Boolean).length,starredItems:Object.values(state.stars).filter(Boolean).length,lastLesson:state.lesson};
-  }
-  async function initializeCloudSync(){
-    try{
-      const createCloudSync=window.NCECloudSync&&window.NCECloudSync.createCloudSync;
-      if(typeof createCloudSync!=="function")throw new Error("云同步组件未加载");
-      cloudSync=await createCloudSync({getState:()=>normalizeState(state),applyState:applyCloudState,getSummary:progressSummary,onAuthenticated:activateStudentStorage,onSignedOut:deactivateStudentStorage});
-    }catch(error){
-      const status=document.querySelector("#cloudSyncStatus"),dot=document.querySelector("#cloudSyncDot");
-      if(status)status.textContent="本机保存 · 云同步暂不可用";
-      if(dot)dot.classList.add("error");
-      console.error("CloudBase 初始化失败",error);
-    }
+  function save({preserveTimestamp=false}={}){
+    if(!preserveTimestamp)state.updatedAt=Date.now();
+    try{if(activeStorageKey)localStorage.setItem(activeStorageKey,JSON.stringify(state))}catch{}
+    updateProgress();
   }
   function esc(s=""){return s.replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
   function rich(s=""){
@@ -257,5 +252,5 @@
   rateSelect.value=String(state.rate);rateSelect.onchange=()=>{state.rate=Number(rateSelect.value);persistentAudio.playbackRate=state.rate;save()};
   document.querySelectorAll(".tab").forEach(tab=>tab.onclick=()=>{stopAudio();view=tab.dataset.view;document.querySelectorAll(".tab").forEach(x=>{x.classList.toggle("active",x===tab);x.setAttribute("aria-selected",String(x===tab))});render()});
   render();
-  initializeCloudSync();
+  activateLocalStorage();
 })();
